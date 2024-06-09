@@ -16,5 +16,13 @@ class TestModels(unittest.TestCase):
         magazine = Magazine(1, "Tech Weekly", "Technology")
         self.assertEqual(magazine.name, "Tech Weekly")
 
+#More tests added
+    def test_article_update_content(self):
+        article = Article(1, "Test Title", "Test Content", 1, 1)
+        article.update_content = "Update content in the article"
+        self.assertEqual(article.content, "Update content in the article")
+
+    
+    
 if __name__ == "__main__":
     unittest.main()
