@@ -1,4 +1,4 @@
-   
+
 from database.connection import get_db_connection
 
 class Author:
