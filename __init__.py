@@ -1,3 +1,4 @@
+from models import magazine
 from models.article import Article
 from models.author import Author
 from models.magazine import Magazine
@@ -23,7 +24,20 @@ new_author3 = Author.create('George Kahugu')
 print("Author ID:", new_author3.id )
 print("Author Name:", new_author3.name)
 
-new_magazine = Magazine. create('Fastcars', 'Motorsport')
-new_magazine2 = Magazine.create('iWorld', 'Tech')
-new_magazine3 = Magazine.create('Sports Review', 'Sports')
+# new_article = Article.create('Speed', 'Cars')
+# print("Article Title:", new_article.title)
+# print("Article Category:", new_article.category)
+
+# new_article2 = Article.create('Gadgets', 'Technology')
+# print("Article Title:", new_article2.title)
+# print("Article Category:", new_article2.category)
+
+# new_article3 = Article.create('Football', 'Sports')
+# print("Article Title:", new_article3.title)
+# print("Article Category:", new_article3.category)
+
+
+magazine = Magazine. create('Fastcars', 'Motorsport')
+magazine2 = Magazine.create('iWorld', 'Tech')
+magazine3 = Magazine.create('Sports Review', 'Sports')
 
