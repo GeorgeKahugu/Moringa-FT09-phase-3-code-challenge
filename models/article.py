@@ -1,6 +1,7 @@
 
 from database.connection import get_db_connection
-from database.setup import create_tables, drop_tables
+from database.setup import create_tables 
+from database.setup import drop_tables
 
 class Article:
     def __init__(self, title, content, author_id, magazine_id, id = None):

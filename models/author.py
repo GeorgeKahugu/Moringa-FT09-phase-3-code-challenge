@@ -1,8 +1,10 @@
 
 from database.connection import get_db_connection
+from database.setup import create_tables
+from database.setup import drop_tables
 
 class Author:
-    def __init__(self, id, name):
+    def __init__(self, name, id= None):
         self.id = id
         self.name = name
 
@@ -12,7 +14,7 @@ class Author:
     
     @id.setter
     def id(self, value):
-        if isinstance(value, int):
+        if value is not None and not isinstance(value, int):
             self._id = value
         else:
             raise ValueError("ID must be of type integer")
@@ -23,77 +25,80 @@ class Author:
 
     @name.setter
     def name(self, value):
-        if isinstance(value, str) and len(value) > 0:
-            self._name = value
-        else:
-            raise ValueError("Name must be a non-empty string")
+        if not isinstance(value, str):
+            raise ValueError("Name must be a string")
+        if len(value) == 0:
+            raise ValueError("Name must be longer than 0 characters")
+        if hasattr(self, '_name'):
+            raise ValueError("Name cannot be chnaged after instantiation")
+        self._name = value
 
     def __repr__(self):
         return f'<Author {self.name}>'
 
     @classmethod
-    def drop_table(cls):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('DROP TABLE IF EXISTS authors')
-        conn.commit()
-        conn.close()
+    def create_table(cls):
+        create_tables()
 
     @classmethod
-    def create_table(cls):
-        conn = get_db_connection()
+    def drop_table(cls):
+        drop_tables()
+
+    def save(self):
+        conn = get_db_connection
         cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS authors (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL
-            )
-        ''')
+
+        sql = """
+            INSERT INTO authors(
+            name
+            )VALUES (?)
+        """
+
+        cursor.execute(sql, (self.name,))
         conn.commit()
-        conn.close()
+
+        self.id = cursor.lastrowid
 
     @staticmethod
-    def create(name):
-        if not name:
-            raise ValueError("Name is required")
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('INSERT INTO authors (name) VALUES (?)', (name,))
-        conn.commit()
-        author_id = cursor.lastrowid
-        conn.close()
-        return Author(author_id, name)
+    def create(cls,name):
+        Author = cls(name)
+        Author.save()
+
+        return Author
+   
+
+    def articles(self):
+       from models.article import Article
+       conn = get_db_connection
+       cursor = conn.cursor()
+
+       sql = """
+            SELECT articles.*
+            FROM articles
+            JOIN authors ON articles.author_id = authors.id
+            WHERE authors.id = ?
+        """
+       cursor.execute (sql, (self.id,))
+       article_rows = cursor.fetchall()
+
+       articles = [Article(*row) for row in article_rows]
+       return articles
     
-    @classmethod
-    def get_all(cls):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM authors')
-        rows = cursor.fetchall()
-        conn.close()
-        return [Author(row[0], row[1]) for row in rows]
-    
-    @classmethod
-    def get_by_id(cls, author_id):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM authors WHERE id = ?', (author_id,))
-        row = cursor.fetchone()
-        conn.close()
-        if row:
-            return Author(row[0], row[1])
-        return None
-    
-    def save(self):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('UPDATE authors SET name = ? WHERE id = ?', (self.name, self.id))
-        conn.commit()
-        conn.close()
-    
-    def delete(self):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('DELETE FROM authors WHERE id = ?', (self.id,))
-        conn.commit()
-        conn.close()
+    def magazines(self):
+        from models.magazine import Magazine
+        conn = get_db_connection
+        cursor = conn.cursor
+
+        sql = """
+            SELECT magazines.*
+            FROM articles
+            JOIN magazines ON articles.magazine_id = magazines.id
+            JOIN authors ON articles.author_id = authors.id
+            WHERE authors.id = ?
+        """
+
+        cursor.execute(sql, (self.id,))
+        magazine_rows = cursor.fetchall()
+
+        magazines = [Magazine(*row) for row in magazine_rows]
+        return magazines
