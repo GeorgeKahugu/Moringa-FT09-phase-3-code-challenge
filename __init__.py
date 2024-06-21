@@ -1,4 +1,4 @@
-from models import magazine
+
 from models.article import Article
 from models.author import Author
 from models.magazine import Magazine
@@ -21,23 +21,20 @@ print("Author ID:", new_author2.id)
 print("Author Name:", new_author2.name)
 
 new_author3 = Author.create('George Kahugu')
-print("Author ID:", new_author3.id )
-print("Author Name:", new_author3.name)
-
-# new_article = Article.create('Speed', 'Cars')
-# print("Article Title:", new_article.title)
-# print("Article Category:", new_article.category)
-
-# new_article2 = Article.create('Gadgets', 'Technology')
-# print("Article Title:", new_article2.title)
-# print("Article Category:", new_article2.category)
-
-# new_article3 = Article.create('Football', 'Sports')
-# print("Article Title:", new_article3.title)
-# print("Article Category:", new_article3.category)
 
 
-magazine = Magazine. create('Fastcars', 'Motorsport')
-magazine2 = Magazine.create('iWorld', 'Tech')
-magazine3 = Magazine.create('Sports Review', 'Sports')
+new_magazine = Magazine.create ('Fastcars','MotorSports')
+new_magazine2 = Magazine.create ('iWorld','Tech')
+new_magazine3 = Magazine.create('Sports Review','Sport')
+
+new_article = Article.create ('SportsCars', 'MotorSports',new_author,new_magazine )
+new_article2 = Article.create('Gadgets', 'Tech', new_author3, new_magazine2)
+new_article3 = Article.create ('Sports Review', 'Sport', new_author2, new_magazine3)
+
+print('New Article Id:', new_article.id)
+print('New Article Id:', new_article2.id)
+print('New Article Title:', new_article2.title)
+
+print('Article Author', new_article3.author().name)
+print('Article Author', new_article.magazine().name)
 

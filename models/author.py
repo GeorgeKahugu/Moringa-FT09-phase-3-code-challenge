@@ -8,20 +8,20 @@ class Author:
         self.id = id
         self.name = name
 
+    #Property Methods
     @property
     def id(self):
         return self._id
-    
+
     @id.setter
     def id(self, value):
         if value is not None and not isinstance(value, int):
-            self._id = value
-        else:
-            raise ValueError("ID must be of type integer")
-        
+            raise ValueError("ID must be of type int")
+        self._id = value
+
     @property
     def name(self):
-        return self._name 
+        return self._name
 
     @name.setter
     def name(self, value):
@@ -30,12 +30,10 @@ class Author:
         if len(value) == 0:
             raise ValueError("Name must be longer than 0 characters")
         if hasattr(self, '_name'):
-            raise ValueError("Name cannot be chnaged after instantiation")
+            raise AttributeError("Name cannot be changed after instantiation")
         self._name = value
 
-    def __repr__(self):
-        return f'<Author {self.name}>'
-
+    #ClassMethods
     @classmethod
     def create_table(cls):
         create_tables()
@@ -45,13 +43,13 @@ class Author:
         drop_tables()
 
     def save(self):
-        conn = get_db_connection
+        conn = get_db_connection()
         cursor = conn.cursor()
 
         sql = """
-            INSERT INTO authors(
+            INSERT INTO authors (
             name
-            )VALUES (?)
+            ) VALUES (?)
         """
 
         cursor.execute(sql, (self.name,))
@@ -59,35 +57,35 @@ class Author:
 
         self.id = cursor.lastrowid
 
-    @staticmethod
-    def create(cls,name):
+
+    @classmethod
+    def create(cls, name):
         Author = cls(name)
         Author.save()
 
         return Author
-   
 
     def articles(self):
-       from models.article import Article
-       conn = get_db_connection
-       cursor = conn.cursor()
+        from models.article import Article
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
-       sql = """
+        sql = """
             SELECT articles.*
             FROM articles
             JOIN authors ON articles.author_id = authors.id
             WHERE authors.id = ?
         """
-       cursor.execute (sql, (self.id,))
-       article_rows = cursor.fetchall()
+        cursor.execute(sql, (self.id,))
+        article_rows = cursor.fetchall()
 
-       articles = [Article(*row) for row in article_rows]
-       return articles
-    
+        articles = [Article(*row) for row in article_rows]
+        return articles
+
     def magazines(self):
         from models.magazine import Magazine
-        conn = get_db_connection
-        cursor = conn.cursor
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
         sql = """
             SELECT magazines.*
@@ -96,9 +94,18 @@ class Author:
             JOIN authors ON articles.author_id = authors.id
             WHERE authors.id = ?
         """
-
         cursor.execute(sql, (self.id,))
         magazine_rows = cursor.fetchall()
 
         magazines = [Magazine(*row) for row in magazine_rows]
         return magazines
+
+
+    
+    def __repr__(self):
+        return f'<Author {self.name}>'
+    
+
+
+    
+
