@@ -1,7 +1,10 @@
 from database.connection import get_db_connection
+from database.setup import create_tables
+from database.setup import drop_tables
+
 
 class Magazine:
-    def __init__(self, id, name, category):
+    def __init__(self, name, category, id = None):
         self.id = id
         self.name = name
         self.category = category
@@ -12,7 +15,7 @@ class Magazine:
     
     @id.setter
     def id(self, value):
-        if isinstance(value, int):
+        if value is not None and not isinstance(value, int):
             self._id = value
         else:
             raise ValueError("ID must be of type integer")
@@ -23,10 +26,13 @@ class Magazine:
 
     @name.setter
     def name(self, value):
-        if isinstance(value, str) and 2 <= len(value) <= 16:
-            self._name = value
-        else:
-            raise ValueError("Name must be a string between 2 and 16 characters long")
+        if not isinstance(value, str):
+            raise ValueError("Name must be a string")
+        
+        if not  (2 <= len(value) <= 16):
+            raise ValueError("Name must be between 2 and 16 characters long")
+        self._name = value
+        
 
     @property
     def category(self):
@@ -34,192 +40,81 @@ class Magazine:
 
     @category.setter
     def category(self,value):
-        if isinstance(value,str) and len(value) > 0:
-            self._category = value
-        else:
-            raise ValueError("Category must be a non-empty string")
+        if not isinstance(value,str):
+            raise ValueError("Category must be a string")
+        if len(value) == 0:
+            raise ValueError("Category must be longer than 0 characters")
+        self._category = value
+        
 
     def __repr__(self):
         return f'<Magazine {self.name}>'
 
     
     @classmethod
-    def drop_table(cls):
-        conn = get_db_connection()
-        cursor = conn.cursor
-        cursor.execute('DROP TABLE IF EXISTS magazines')
-        conn.commit()
-        conn.close()
+    def create_table(cls):
+        create_tables
 
     @classmethod
-    def create_table(cls):
+    def drop_table(cls):
+        drop_tables
+
+    def save(self):
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS magazines (
-                       id INTEGER PRIMARY KEY AUTOINCREMENT
-                       name TEXT NOT NULL
-                       category TEXT NOT NULL
-                       )
-        ''')
-        conn.commit()
-        conn.close()
 
-    @staticmethod
-    def create(name,category):
-        if not name or not category:
-            raise ValueError("Name and category are required")
+        sql = """
+            INSERT INTO magazines(
+            name, category
+            ) VALUES (?, ?)
+        """
+
+        cursor.execute(sql, (self.name, self.category,))
+        conn.commit()
+
+        self.id = cursor.lastrowid
+
+    @classmethod
+    def create (cls, name, category):
+        Magazine = cls(name, category)
+        Magazine.save()
+
+        return Magazine
+
+
+    def articles(self):
+        from models.article import Article
         conn = get_db_connection
-        cursor = conn.cursor()
-        cursor.execute('INSERT INTO magazines (name,category) VALUES (?,?)',(name,category))
-        conn.commit()
-        magazine_id = cursor.lastrowid
-        conn.close()
-        return Magazine(magazine_id,name,category)
-    
-    @classmethod
-    def get_all(cls):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM magazines')
-        rows = cursor.fetchall()
-        conn.close
-        return [Magazine(row[0],row[1],row[2]) for row in rows]
-    
-    @classmethod
-    def get_by_id(cls,magazine_id):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM magazines WHERE id=?',(magazine_id,))
-        row = cursor.fetchone()
-        conn.close()
-        if row:
-            return Magazine(row[0], row[1], row[2])
-        return None
-    
-    def save(self):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('UPDATE magazines SET name=?, category=? WHERE id=?',(self.name, self.category, self.id))
-        conn.commit()
-        conn.close()
-    
-    def delete(self):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('DELETE FROM magazines WHERE id=?',(self.id,))
-        conn.commit()
-        conn.close()
-                       
-        
-from database.connection import get_db_connection
+        cursor = conn.cursor 
 
-class Magazine:
-    def __init__(self, id, name, category):
-        self.id = id
-        self.name = name
-        self.category = category
+        sql = """
+            SELECT articles.*
+            FROM articles
+            JOIN magazines ON articles.magazine_id = magazines.id
+            WHERE magazines.id = ?
+        """
 
-    @property
-    def id(self):
-        return self._id
+        cursor.execute(sql, (self.id))
+        article_rows = cursor.fetchall()
+
+        articles = [Article(*row) for row in article_rows]
+        return articles
     
-    @id.setter
-    def id(self, value):
-        if isinstance(value, int):
-            self._id = value
-        else:
-            raise ValueError("ID must be of type integer")
-        
-    @property
-    def name(self):
-        return self._name 
+    def contributors(self):
+        from models.author import Author
+        conn = get_db_connection
+        cursor = conn.cursor
 
-    @name.setter
-    def name(self, value):
-        if isinstance(value, str) and 2 <= len(value) <= 16:
-            self._name = value
-        else:
-            raise ValueError("Name must be a string between 2 and 16 characters long")
+        sql = """
+            SELECT authors
+            FROM articles
+            JOIN authors ON articles.author_id = authors.id
+            JOIN magazines ON articles.on magazine_id = magazines.id
+            WHERE magazines.id = ?
+        """
 
-    @property
-    def category(self):
-        return self._category
+        cursor.execute(sql (self.id,))
+        contributor_rows = cursor.fetchall()
 
-    @category.setter
-    def category(self, value):
-        if isinstance(value, str) and len(value) > 0:
-            self._category = value
-        else:
-            raise ValueError("Category must be a non-empty string")
-
-    def __repr__(self):
-        return f'<Magazine {self.name}>'
-    
-    @classmethod
-    def drop_table(cls):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('DROP TABLE IF EXISTS magazines')
-        conn.commit()
-        conn.close()
-
-    @classmethod
-    def create_table(cls):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS magazines (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                category TEXT NOT NULL
-            )
-        ''')
-        conn.commit()
-        conn.close()
-
-    @staticmethod
-    def create(name, category):
-        if not name or not category:
-            raise ValueError("Name and category are required")
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('INSERT INTO magazines (name, category) VALUES (?, ?)', (name, category))
-        conn.commit()
-        magazine_id = cursor.lastrowid
-        conn.close()
-        return Magazine(magazine_id, name, category)
-    
-    @classmethod
-    def get_all(cls):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM magazines')
-        rows = cursor.fetchall()
-        conn.close()
-        return [Magazine(row[0], row[1], row[2]) for row in rows]
-    
-    @classmethod
-    def get_by_id(cls, magazine_id):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM magazines WHERE id = ?', (magazine_id,))
-        row = cursor.fetchone()
-        conn.close()
-        if row:
-            return Magazine(row[0], row[1], row[2])
-        return None
-    
-    def save(self):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('UPDATE magazines SET name = ?, category = ? WHERE id = ?', (self.name, self.category, self.id))
-        conn.commit()
-        conn.close()
-    
-    def delete(self):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('DELETE FROM magazines WHERE id = ?', (self.id,))
-        conn.commit()
-        conn.close()
+        contributors = [Author(*row) for row in contributor_rows]
+        return contributors
